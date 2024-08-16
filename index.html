@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dynamic Excel-Like Form with Login</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      input,
+      select {
+        width: calc(100% - 32px); /* Adjust width based on padding */
+        height: 24px; /* Decrease height */
+        box-sizing: border-box;
+        outline: none;
+        background-color: transparent;
+        border-radius: 0;
+        text-align: left;
+      }
+
+      th,
+      td {
+        padding: 8px 16px; /* Increase horizontal padding */
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f3f3f3;
+        position: sticky;
+      }
+
+      table {
+        width: 400%;
+        border-collapse: collapse;
+      }
+
+      #main-page {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 p-6">
+    <!-- Login Page -->
+    <div id="login-page" class="w-full max-w-sm mx-auto">
+      <h2 class="text-2xl font-bold mb-4">Login</h2>
+      <div class="mb-4">
+        <label class="block text-gray-700">Username</label>
+        <input
+          type="text"
+          id="username"
+          class="w-full px-3 py-2 border border-gray-300 rounded"
+        />
+      </div>
+      <div class="mb-4">
+        <label class="block text-gray-700">Password</label>
+        <input
+          type="password"
+          id="password"
+          class="w-full px-3 py-2 border border-gray-300 rounded"
+        />
+      </div>
+      <button
+        id="login-btn"
+        class="w-full bg-blue-500 text-white px-4 py-2 rounded"
+      >
+        Login
+      </button>
+      <p id="login-status" class="text-red-500 mt-4"></p>
+    </div>
+
+    <!-- Main Page -->
+    <div id="main-page">
+      <div class="w-full mx-auto">
+        <div class="flex gap-2 mb-4">
+          <button
+            id="load-data-btn"
+            class="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Load Data
+          </button>
+          <button
+            id="save-data-btn"
+            class="bg-green-500 text-white px-4 py-2 rounded"
+          >
+            Save Data
+          </button>
+          <button
+            id="logout-btn"
+            class="bg-red-500 text-white px-4 py-2 rounded"
+          >
+            Logout
+          </button>
+        </div>
+
+        <div class="overflow-auto max-h-[80vh] border border-gray-300 rounded">
+          <div id="table-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("login-btn")
+        .addEventListener("click", async () => {
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+
+          const response = await window.api.login(username, password);
+          if (response.success) {
+            document.getElementById("login-page").classList.add("hidden");
+            document.getElementById("main-page").style.display = "block";
+          } else {
+            document.getElementById("login-status").innerText =
+              "Incorrect username or password";
+          }
+        });
+
+      document
+        .getElementById("load-data-btn")
+        .addEventListener("click", async () => {
+          const data = await window.api.loadData();
+          createTable(data);
+        });
+
+      document
+        .getElementById("save-data-btn")
+        .addEventListener("click", async () => {
+          const data = extractTableData();
+          await window.api.saveData(data);
+          alert("Data saved!");
+        });
+
+      document.getElementById("logout-btn").addEventListener("click", () => {
+        document.getElementById("main-page").style.display = "none";
+        document.getElementById("login-page").classList.remove("hidden");
+      });
+
+      function createTable(data) {
+        const tableContainer = document.getElementById("table-container");
+        tableContainer.innerHTML = "";
+
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const tbody = document.createElement("tbody");
+
+        // Create table header
+        const headerRow = document.createElement("tr");
+        data[0].forEach((header) => {
+          const th = document.createElement("th");
+          th.innerText = header;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+
+        // Create table body with input fields
+        data.slice(1).forEach((row) => {
+          const tr = document.createElement("tr");
+          row.forEach((cell) => {
+            const td = document.createElement("td");
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = cell;
+            td.appendChild(input);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+
+        // Add an empty row for new data
+        addEmptyRow(tbody);
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        tableContainer.appendChild(table);
+      }
+
+      function addEmptyRow(tbody) {
+        const tr = document.createElement("tr");
+        const headers = document.querySelectorAll(
+          "#table-container table thead th"
+        );
+        headers.forEach(() => {
+          const td = document.createElement("td");
+          const input = document.createElement("input");
+          input.type = "text";
+          td.appendChild(input);
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      }
+
+      function extractTableData() {
+        const table = document.querySelector("#table-container table");
+        const data = [];
+
+        const headers = document.querySelectorAll(
+          "#table-container table thead th"
+        );
+        const headerRow = [];
+        headers.forEach((th) => {
+          headerRow.push(th.innerText);
+        });
+        data.push(headerRow);
+
+        const rows = document.querySelectorAll(
+          "#table-container table tbody tr"
+        );
+        rows.forEach((row) => {
+          const rowData = [];
+          const cells = row.querySelectorAll("td input");
+          cells.forEach((cell) => {
+            rowData.push(cell.value);
+          });
+          data.push(rowData);
+        });
+
+        return data;
+      }
+    </script>
+  </body>
+</html>

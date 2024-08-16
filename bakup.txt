@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spreadsheet Form Editor</title>
+    <link href="./dist/tailwind.css" rel="stylesheet" />
+    <style>
+      input,
+      select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px;
+        padding: 5px;
+        outline: none;
+        background-color: transparent;
+      }
+      .form-group {
+        margin-bottom: 10px;
+      }
+      label {
+        font-weight: bold;
+        margin-right: 10px;
+      }
+      .form-container {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid gray;
+        background-color: #f9f9f9;
+      }
+      .accordion-header {
+        cursor: pointer;
+        padding: 10px;
+        background-color: #e2e8f0;
+        border: 1px solid #cbd5e0;
+        margin-bottom: 5px;
+      }
+      .accordion-body {
+        display: none;
+        padding: 15px;
+        background-color: white;
+      }
+      .accordion-body.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 p-4">
+    <div class="flex gap-2 mb-4">
+      <button
+        onclick="loadData()"
+        class="bg-blue-500 text-white px-4 py-2 rounded"
+      >
+        Load Data
+      </button>
+      <button
+        onclick="saveData()"
+        class="bg-green-500 text-white px-4 py-2 rounded"
+      >
+        Save All Data
+      </button>
+      <button
+        onclick="logout()"
+        class="bg-red-500 text-white px-4 py-2 rounded"
+      >
+        Logout
+      </button>
+      <button
+        onclick="addRow()"
+        class="bg-yellow-500 text-white px-4 py-2 rounded"
+      >
+        Add Row
+      </button>
+    </div>
+
+    <div id="accordion-container" class="accordion-container">
+      <!-- Accordion forms will be generated here -->
+    </div>
+
+    <script>
+      let columns = [];
+      const dropdownFields = {
+        Country: ["USA", "Canada", "UK", "Australia"],
+        "Vendor/Partner": ["Vendor A", "Vendor B", "Vendor C"],
+        "Call Remarks": ["Interested", "Not Interested", "Follow-up"],
+      };
+
+      async function loadData() {
+        const response = await window.api.loadData();
+        generateAccordionForms(response);
+      }
+
+      async function saveData() {
+        const formData = getFormData();
+        await window.api.saveData(formData);
+        alert("All data saved!");
+      }
+
+      function generateAccordionForms(data) {
+        const accordionContainer = document.getElementById(
+          "accordion-container"
+        );
+        accordionContainer.innerHTML = ""; // Clear existing forms
+
+        columns = data[0]; // Assume the first row is the header
+        data.slice(1).forEach((row, rowIndex) => {
+          let accordionItem = document.createElement("div");
+          accordionItem.className = "accordion-item";
+
+          let header = document.createElement("div");
+          header.className = "accordion-header";
+          header.innerHTML = `${row[0]} - ${row[2]}`; // Display Ref No and Name
+          header.onclick = function () {
+            this.nextElementSibling.classList.toggle("active");
+          };
+
+          let body = document.createElement("div");
+          body.className = "accordion-body form-container";
+
+          columns.forEach((column, colIndex) => {
+            let formGroup = document.createElement("div");
+            formGroup.className = "form-group";
+
+            let label = document.createElement("label");
+            label.innerHTML = column;
+            formGroup.appendChild(label);
+
+            let input;
+            if (dropdownFields[column]) {
+              input = document.createElement("select");
+              dropdownFields[column].forEach((option) => {
+                let optionElement = document.createElement("option");
+                optionElement.value = option;
+                optionElement.text = option;
+                input.appendChild(optionElement);
+              });
+              input.value = row[colIndex]; // Set the current value
+            } else {
+              input = document.createElement("input");
+              input.type = "text";
+              input.value = row[colIndex];
+            }
+
+            input.dataset.row = rowIndex;
+            input.dataset.col = colIndex;
+            input.disabled = colIndex === 0; // Disable first column for editing
+            formGroup.appendChild(input);
+
+            body.appendChild(formGroup);
+          });
+
+          // Update button for each form
+          let updateButton = document.createElement("button");
+          updateButton.className = "bg-green-500 text-white px-4 py-2 rounded";
+          updateButton.innerHTML = "Update";
+          updateButton.onclick = function () {
+            updateRow(rowIndex);
+          };
+          body.appendChild(updateButton);
+
+          accordionItem.appendChild(header);
+          accordionItem.appendChild(body);
+          accordionContainer.appendChild(accordionItem);
+        });
+      }
+
+      function getFormData() {
+        const forms = document.querySelectorAll(
+          "#accordion-container .accordion-body"
+        );
+        const data = [columns]; // Include the header as the first row
+
+        forms.forEach((form) => {
+          const rowData = [];
+          form.querySelectorAll("input, select").forEach((input) => {
+            rowData.push(input.value);
+          });
+          data.push(rowData);
+        });
+
+        return data;
+      }
+
+      function updateRow(rowIndex) {
+        const form = document.querySelector(
+          `#accordion-container .accordion-body[data-row="${rowIndex}"]`
+        );
+        const updatedData = [];
+        form.querySelectorAll("input, select").forEach((input) => {
+          updatedData.push(input.value);
+        });
+
+        // Now you can send this updatedData to your backend to update the specific row
+        console.log("Updating row:", rowIndex, updatedData);
+        alert("Row updated!");
+      }
+
+      function addRow() {
+        const accordionContainer = document.getElementById(
+          "accordion-container"
+        );
+        let accordionItem = document.createElement("div");
+        accordionItem.className = "accordion-item";
+
+        let header = document.createElement("div");
+        header.className = "accordion-header";
+        header.innerHTML = "New Row - "; // You can adjust how new rows are handled
+        header.onclick = function () {
+          this.nextElementSibling.classList.toggle("active");
+        };
+
+        let body = document.createElement("div");
+        body.className = "accordion-body form-container";
+
+        columns.forEach((column, colIndex) => {
+          let formGroup = document.createElement("div");
+          formGroup.className = "form-group";
+
+          let label = document.createElement("label");
+          label.innerHTML = column;
+          formGroup.appendChild(label);
+
+          let input;
+          if (dropdownFields[column]) {
+            input = document.createElement("select");
+            dropdownFields[column].forEach((option) => {
+              let optionElement = document.createElement("option");
+              optionElement.value = option;
+              optionElement.text = option;
+              input.appendChild(optionElement);
+            });
+          } else {
+            input = document.createElement("input");
+            input.type = "text";
+          }
+
+          input.disabled = colIndex === 0; // Disable first column for editing
+          formGroup.appendChild(input);
+
+          body.appendChild(formGroup);
+        });
+
+        // Update button for new row
+        let updateButton = document.createElement("button");
+        updateButton.className = "bg-green-500 text-white px-4 py-2 rounded";
+        updateButton.innerHTML = "Update";
+        updateButton.onclick = function () {
+          updateRow(-1); // Use -1 or some other mechanism to differentiate new rows
+        };
+        body.appendChild(updateButton);
+
+        accordionItem.appendChild(header);
+        accordionItem.appendChild(body);
+        accordionContainer.appendChild(accordionItem);
+      }
+    </script>
+  </body>
+</html>
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dynamic Excel-Like Form</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      input,
+      select {
+        width: calc(100% - 32px); /* Adjust width based on padding */
+        height: 24px; /* Decrease height */
+        box-sizing: border-box;
+        outline: none;
+        background-color: transparent;
+        border-radius: 0;
+        text-align: left;
+      }
+
+      th,
+      td {
+        padding: 8px 16px; /* Increase horizontal padding */
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f3f3f3;
+      }
+
+      table {
+        width: 400%;
+        border-collapse: collapse;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 p-6">
+    <div class="w-full mx-auto">
+      <div class="flex gap-2 mb-4">
+        <button
+          onclick="loadData()"
+          class="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Load Data
+        </button>
+        <button
+          onclick="saveData()"
+          class="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          Save Data
+        </button>
+      </div>
+
+      <div class="overflow-auto max-h-[80vh] border border-gray-300 rounded">
+        <table id="spreadsheet">
+          <!-- Table with dynamic forms will be generated here -->
+        </table>
+      </div>
+    </div>
+
+    <script>
+      let columns = [];
+
+      async function loadData() {
+        const response = await window.api.loadData(); // Fetch data from your backend or API
+        generateTable(response);
+      }
+
+      async function saveData() {
+        const tableData = getTableData();
+        await window.api.saveData(tableData); // Save data back to your backend or API
+        alert("Data saved!");
+      }
+
+      function generateTable(data) {
+        const table = document.getElementById("spreadsheet");
+        table.innerHTML = ""; // Clear existing data
+
+        columns = data[0]; // Assume the first row is the header
+        createTableHeader(columns);
+
+        data.slice(1).forEach((row, rowIndex) => {
+          let tr = table.insertRow(-1);
+          row.forEach((cell, colIndex) => {
+            let td = tr.insertCell(-1);
+            if (colIndex === 0) {
+              // First column is non-editable
+              td.textContent = cell;
+            } else {
+              let input = createInputField(
+                columns[colIndex],
+                cell,
+                rowIndex,
+                colIndex
+              );
+              td.appendChild(input);
+            }
+            td.className = "border p-2";
+          });
+        });
+      }
+
+      function createTableHeader(columns) {
+        const table = document.getElementById("spreadsheet");
+        let thead = table.createTHead();
+        let tr = thead.insertRow(-1);
+
+        columns.forEach((column, colIndex) => {
+          let th = document.createElement("th");
+          th.textContent = column;
+          th.className = "border p-2 bg-gray-200";
+          tr.appendChild(th);
+        });
+      }
+
+      function createInputField(columnName, value, rowIndex, colIndex) {
+        const dropdownColumns = [
+          "Country Interested",
+          "Vendor/Partner",
+          "Call Remarks",
+        ];
+
+        if (dropdownColumns.includes(columnName)) {
+          const select = document.createElement("select");
+          select.id = `${columnName
+            .toLowerCase()
+            .replace(/ /g, "-")}-${rowIndex}`;
+          select.innerHTML = `
+            <option value="${value}">${value}</option>
+            <option value="Option 1">Option 1</option>
+            <option value="Option 2">Option 2</option>
+            <option value="Option 3">Option 3</option>
+          `;
+          return select;
+        } else {
+          const input = document.createElement("input");
+          input.type = "text";
+          input.value = value;
+          input.dataset.row = rowIndex;
+          input.dataset.col = colIndex;
+          return input;
+        }
+      }
+
+      function getTableData() {
+        const table = document.getElementById("spreadsheet");
+        const data = [columns]; // Include the header as the first row
+
+        for (let i = 1, row; (row = table.rows[i]); i++) {
+          const rowData = [];
+          for (let j = 0, col; (col = row.cells[j]); j++) {
+            rowData.push(
+              col.firstChild ? col.firstChild.value : col.textContent
+            );
+          }
+          data.push(rowData);
+        }
+        return data;
+      }
+
+      // Load data when the page loads
+      loadData();
+    </script>
+  </body>
+</html>
+
