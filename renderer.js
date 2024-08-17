@@ -14,16 +14,14 @@ document.getElementById("login-btn").addEventListener("click", async () => {
 
 document.getElementById("load-data-btn").addEventListener("click", async () => {
   const data = await window.api.loadData();
-  createTable(data);
+  const dropdownOptions = await window.api.loadDropdownOptions();
+  createTable(data, dropdownOptions);
 });
 
 document.getElementById("save-data-btn").addEventListener("click", async () => {
   const data = extractTableData();
   await window.api.saveData(data);
-});
-
-document.getElementById("add-row-btn").addEventListener("click", () => {
-  addEmptyRow();
+  alert("Data saved!");
 });
 
 document.getElementById("logout-btn").addEventListener("click", () => {
@@ -31,7 +29,7 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   document.getElementById("login-page").classList.remove("hidden");
 });
 
-function createTable(data) {
+function createTable(data, dropdownOptions) {
   const tableContainer = document.getElementById("table-container");
   tableContainer.innerHTML = "";
 
@@ -39,7 +37,6 @@ function createTable(data) {
   const thead = document.createElement("thead");
   const tbody = document.createElement("tbody");
 
-  // Create table header
   const headerRow = document.createElement("tr");
   data[0].forEach((header) => {
     const th = document.createElement("th");
@@ -48,36 +45,59 @@ function createTable(data) {
   });
   thead.appendChild(headerRow);
 
-  // Create table body with input fields
   data.slice(1).forEach((row) => {
     const tr = document.createElement("tr");
-    row.forEach((cell) => {
+    row.forEach((cell, colIndex) => {
       const td = document.createElement("td");
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = cell;
-      td.appendChild(input);
+      if (dropdownOptions[colIndex]) {
+        const select = document.createElement("select");
+        dropdownOptions[colIndex].forEach((option) => {
+          const optionElement = document.createElement("option");
+          optionElement.value = option;
+          optionElement.text = option;
+          if (option === cell) {
+            optionElement.selected = true;
+          }
+          select.appendChild(optionElement);
+        });
+        td.appendChild(select);
+      } else {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = cell;
+        td.appendChild(input);
+      }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
   });
 
-  // Add an empty row for new data
-  addEmptyRow(tbody);
+  addEmptyRow(tbody, dropdownOptions);
 
   table.appendChild(thead);
   table.appendChild(tbody);
   tableContainer.appendChild(table);
 }
 
-function addEmptyRow(tbody) {
+function addEmptyRow(tbody, dropdownOptions) {
   const tr = document.createElement("tr");
   const headers = document.querySelectorAll("#table-container table thead th");
-  headers.forEach(() => {
+  headers.forEach((_, colIndex) => {
     const td = document.createElement("td");
-    const input = document.createElement("input");
-    input.type = "text";
-    td.appendChild(input);
+    if (dropdownOptions[colIndex]) {
+      const select = document.createElement("select");
+      dropdownOptions[colIndex].forEach((option) => {
+        const optionElement = document.createElement("option");
+        optionElement.value = option;
+        optionElement.text = option;
+        select.appendChild(optionElement);
+      });
+      td.appendChild(select);
+    } else {
+      const input = document.createElement("input");
+      input.type = "text";
+      td.appendChild(input);
+    }
     tr.appendChild(td);
   });
 
@@ -87,20 +107,13 @@ function addEmptyRow(tbody) {
 function extractTableData() {
   const table = document.querySelector("#table-container table");
   const data = [];
+  const rows = table.querySelectorAll("tr");
 
-  const headers = document.querySelectorAll("#table-container table thead th");
-  const headerRow = [];
-  headers.forEach((th) => {
-    headerRow.push(th.innerText);
-  });
-  data.push(headerRow);
-
-  const rows = document.querySelectorAll("#table-container table tbody tr");
   rows.forEach((row) => {
     const rowData = [];
-    const cells = row.querySelectorAll("td input");
-    cells.forEach((cell) => {
-      rowData.push(cell.value);
+    row.querySelectorAll("td").forEach((cell) => {
+      const input = cell.querySelector("input, select");
+      rowData.push(input.value);
     });
     data.push(rowData);
   });

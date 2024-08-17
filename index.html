@@ -122,7 +122,8 @@
         .getElementById("load-data-btn")
         .addEventListener("click", async () => {
           const data = await window.api.loadData();
-          createTable(data);
+          const dropdownOptions = await window.api.loadDropdownOptions();
+          createTable(data, dropdownOptions);
         });
 
       document
@@ -138,7 +139,7 @@
         document.getElementById("login-page").classList.remove("hidden");
       });
 
-      function createTable(data) {
+      function createTable(data, dropdownOptions) {
         const tableContainer = document.getElementById("table-container");
         tableContainer.innerHTML = "";
 
@@ -155,38 +156,66 @@
         });
         thead.appendChild(headerRow);
 
-        // Create table body with input fields
+        // Create table body with input fields or dropdowns
         data.slice(1).forEach((row) => {
           const tr = document.createElement("tr");
-          row.forEach((cell) => {
+          row.forEach((cell, colIndex) => {
             const td = document.createElement("td");
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = cell;
-            td.appendChild(input);
+            const header = data[0][colIndex]; // Get the header name for the column
+
+            if (dropdownOptions[header]) {
+              // Create a select element if dropdown options exist for this column
+              const select = document.createElement("select");
+              dropdownOptions[header].forEach((option) => {
+                const optionElement = document.createElement("option");
+                optionElement.value = option;
+                optionElement.text = option;
+                if (option === cell) {
+                  optionElement.selected = true;
+                }
+                select.appendChild(optionElement);
+              });
+              td.appendChild(select);
+            } else {
+              // Otherwise, create a text input
+              const input = document.createElement("input");
+              input.type = "text";
+              input.value = cell;
+              td.appendChild(input);
+            }
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
         });
 
         // Add an empty row for new data
-        addEmptyRow(tbody);
+        addEmptyRow(tbody, dropdownOptions, data[0]);
 
         table.appendChild(thead);
         table.appendChild(tbody);
         tableContainer.appendChild(table);
       }
 
-      function addEmptyRow(tbody) {
+      function addEmptyRow(tbody, dropdownOptions, headers) {
         const tr = document.createElement("tr");
-        const headers = document.querySelectorAll(
-          "#table-container table thead th"
-        );
-        headers.forEach(() => {
+        headers.forEach((header) => {
           const td = document.createElement("td");
-          const input = document.createElement("input");
-          input.type = "text";
-          td.appendChild(input);
+          if (dropdownOptions[header]) {
+            // Create a select element if dropdown options exist for this column
+            const select = document.createElement("select");
+            dropdownOptions[header].forEach((option) => {
+              const optionElement = document.createElement("option");
+              optionElement.value = option;
+              optionElement.text = option;
+              select.appendChild(optionElement);
+            });
+            td.appendChild(select);
+          } else {
+            // Otherwise, create a text input
+            const input = document.createElement("input");
+            input.type = "text";
+            td.appendChild(input);
+          }
           tr.appendChild(td);
         });
 
@@ -211,7 +240,7 @@
         );
         rows.forEach((row) => {
           const rowData = [];
-          const cells = row.querySelectorAll("td input");
+          const cells = row.querySelectorAll("td input, td select");
           cells.forEach((cell) => {
             rowData.push(cell.value);
           });
