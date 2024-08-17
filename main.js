@@ -52,7 +52,7 @@ ipcMain.handle("login", async (event, username, password) => {
   }
 });
 
-ipcMain.handle("load-data", async () => {
+ipcMain.handle("load-data", async (event, loggedInUser) => {
   const auth = new google.auth.GoogleAuth({
     credentials: credentials,
     scopes: SCOPES,
@@ -69,6 +69,10 @@ ipcMain.handle("load-data", async () => {
     });
 
     const data = res.data.values || [];
+    if (data.length === 0) {
+      return []; // No data found
+    }
+
     const normalizedData = data.map((row) => {
       const filledRow = row.map((cell) => cell ?? "");
       while (filledRow.length < Math.max(...data.map((row) => row.length))) {
@@ -77,7 +81,21 @@ ipcMain.handle("load-data", async () => {
       return filledRow;
     });
 
-    return normalizedData;
+    const headerRow = normalizedData[0];
+    const counsellorIndex = headerRow.indexOf("Counsellor");
+
+    if (counsellorIndex === -1) {
+      console.error("Counsellor column not found");
+      return [];
+    }
+
+    // Filter rows where "Counsellor" matches the logged-in user
+    const filteredRows = normalizedData.filter((row, index) => {
+      if (index === 0) return true; // Include header row
+      return row[counsellorIndex] == loggedInUser;
+    });
+
+    return filteredRows;
   } catch (error) {
     console.error("Error loading data:", error);
     return [];
@@ -101,7 +119,7 @@ ipcMain.handle("load-dropdown-options", async () => {
     });
 
     const dropdownOptions = res.data.values || [];
-    const headers = dropdownOptions[0]; // The first row contains the header names
+    const headers = dropdownOptions[0];
     const optionsByHeader = headers.reduce((acc, header, index) => {
       acc[header] = dropdownOptions
         .slice(1)

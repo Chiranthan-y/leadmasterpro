@@ -1,0 +1,31 @@
+input,
+select {
+  width: calc(100% - 32px); /* Adjust width based on padding */
+  height: 24px; /* Decrease height */
+  box-sizing: border-box;
+  outline: none;
+  background-color: transparent;
+  border-radius: 0;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 8px 16px; /* Increase horizontal padding */
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+th {
+  background-color: #f3f3f3;
+  position: sticky;
+}
+
+table {
+  width: 400%;
+  border-collapse: collapse;
+}
+
+#main-page {
+  display: none;
+}
