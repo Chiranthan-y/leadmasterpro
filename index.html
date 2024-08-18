@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dynamic Excel-Like Form with Login</title>
+    <title>Lead Master Pro</title>
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
@@ -44,7 +44,7 @@
       <div class="w-full mx-auto">
         <div class="w-full mx-auto p-6 bg-white rounded-lg">
           <div class="text-center mb-4">
-            <h1 class="text-4xl font-bold text-gray-800">LeadMaster Pro</h1>
+            <h1 class="text-4xl font-bold text-gray-800">Lead Master Pro</h1>
             <h2 class="text-lg font-semibold text-gray-500">
               Logged in as: <span class="text-blue-500">[Username]</span>
             </h2>
@@ -65,6 +65,12 @@
             Save Data
           </button>
           <button
+            id="add-row-btn"
+            class="bg-yellow-500 text-white px-4 py-2 rounded"
+          >
+            Add Row
+          </button>
+          <button
             id="logout-btn"
             class="bg-red-500 text-white px-4 py-2 rounded"
           >
@@ -72,10 +78,22 @@
           </button>
         </div>
 
+        <input type="text" id="search-box" placeholder="Search..." />
+
         <div class="overflow-auto max-h-[80vh] border border-gray-300 rounded">
           <div id="table-container"></div>
         </div>
       </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div
+      id="spinner"
+      class="flex hidden fixed inset-0 bg-black bg-opacity-50 justify-center items-center"
+    >
+      <div
+        class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"
+      ></div>
     </div>
     <script src="./assets/js/script.js"></script>
   </body>

@@ -1,0 +1,7 @@
+{
+  "SCOPES": ["https://www.googleapis.com/auth/spreadsheets"],
+  "SHEET_ID": "1eqkXPTHTHi-C4w_GFS8iQUU83BoYpcAai4QnxYNuxC8",
+  "MAIN_RANGE": "Sheet1",
+  "USER_RANGE": "User!A2:B",
+  "DROP_DOWN_RANGE": "DropdownOptions!A1:C"
+}

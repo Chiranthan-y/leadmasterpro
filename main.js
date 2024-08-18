@@ -3,7 +3,19 @@ const path = require("path");
 const { google } = require("googleapis");
 
 const credentials = require("./credentials.json");
-const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
+const master = require("./master.json");
+
+const SCOPES = master.SCOPES;
+const sheetId = master.SHEET_ID;
+const mainRange = master.MAIN_RANGE;
+const userRange = master.USER_RANGE;
+const dropDownRange = master.DROP_DOWN_RANGE;
+
+const auth = new google.auth.GoogleAuth({
+  credentials: credentials,
+  scopes: SCOPES,
+});
+const sheets = google.sheets({ version: "v4", auth });
 
 let mainWindow;
 
@@ -24,27 +36,16 @@ function createWindow() {
 app.on("ready", createWindow);
 
 ipcMain.handle("login", async (event, username, password) => {
-  const auth = new google.auth.GoogleAuth({
-    credentials: credentials,
-    scopes: SCOPES,
-  });
-
-  const sheets = google.sheets({ version: "v4", auth });
-  const sheetId = "1eqkXPTHTHi-C4w_GFS8iQUU83BoYpcAai4QnxYNuxC8";
-  const range = "User!A2:B";
-
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: range,
+      range: userRange,
     });
-
     const users = res.data.values || [];
     const userMap = users.reduce((acc, [user, pass]) => {
       acc[user] = pass;
       return acc;
     }, {});
-
     return { success: userMap[username] === password };
   } catch (error) {
     console.error("Error fetching user data:", error);
@@ -53,26 +54,15 @@ ipcMain.handle("login", async (event, username, password) => {
 });
 
 ipcMain.handle("load-data", async (event, loggedInUser) => {
-  const auth = new google.auth.GoogleAuth({
-    credentials: credentials,
-    scopes: SCOPES,
-  });
-
-  const sheets = google.sheets({ version: "v4", auth });
-  const sheetId = "1eqkXPTHTHi-C4w_GFS8iQUU83BoYpcAai4QnxYNuxC8";
-  const range = "Sheet1";
-
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: range,
+      range: mainRange,
     });
-
     const data = res.data.values || [];
     if (data.length === 0) {
       return []; // No data found
     }
-
     const normalizedData = data.map((row) => {
       const filledRow = row.map((cell) => cell ?? "");
       while (filledRow.length < Math.max(...data.map((row) => row.length))) {
@@ -89,13 +79,15 @@ ipcMain.handle("load-data", async (event, loggedInUser) => {
       return [];
     }
 
-    // Filter rows where "Counsellor" matches the logged-in user
-    const filteredRows = normalizedData.filter((row, index) => {
-      if (index === 0) return true; // Include header row
-      return row[counsellorIndex] == loggedInUser;
-    });
+    // Filter rows where "Counsellor" matches the logged-in user and keep original indices
+    const filteredRowsWithIndex = normalizedData
+      .map((row, index) => ({ row, originalIndex: index }))
+      .filter(({ row, originalIndex }) => {
+        if (originalIndex === 0) return true; // Include header row
+        return row[counsellorIndex] == loggedInUser;
+      });
 
-    return filteredRows;
+    return filteredRowsWithIndex;
   } catch (error) {
     console.error("Error loading data:", error);
     return [];
@@ -103,21 +95,11 @@ ipcMain.handle("load-data", async (event, loggedInUser) => {
 });
 
 ipcMain.handle("load-dropdown-options", async () => {
-  const auth = new google.auth.GoogleAuth({
-    credentials: credentials,
-    scopes: SCOPES,
-  });
-
-  const sheets = google.sheets({ version: "v4", auth });
-  const sheetId = "1eqkXPTHTHi-C4w_GFS8iQUU83BoYpcAai4QnxYNuxC8";
-  const dropdownRange = "DropdownOptions!A1:C"; // Adjust range as needed
-
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: dropdownRange,
+      range: dropDownRange,
     });
-
     const dropdownOptions = res.data.values || [];
     const headers = dropdownOptions[0];
     const optionsByHeader = headers.reduce((acc, header, index) => {
@@ -135,21 +117,24 @@ ipcMain.handle("load-dropdown-options", async () => {
   }
 });
 
-ipcMain.handle("save-data", async (event, data) => {
-  const auth = new google.auth.GoogleAuth({
-    credentials: credentials,
-    scopes: SCOPES,
-  });
-
-  const sheets = google.sheets({ version: "v4", auth });
-  const sheetId = "1eqkXPTHTHi-C4w_GFS8iQUU83BoYpcAai4QnxYNuxC8";
-
+ipcMain.handle("save-data", async (event, dataWithIndex) => {
   try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: mainRange,
+    });
+    const existingData = res.data.values || [];
+
+    // Update existingData with modified rowsoriginalIndex
+    dataWithIndex.forEach(({ originalIndex, rowData }) => {
+      existingData[originalIndex] = rowData;
+    });
+
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: "Sheet1",
+      range: mainRange,
       valueInputOption: "RAW",
-      resource: { values: data },
+      resource: { values: existingData },
     });
   } catch (error) {
     console.error("Error saving data:", error);
