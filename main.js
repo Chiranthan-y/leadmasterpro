@@ -125,9 +125,14 @@ ipcMain.handle("save-data", async (event, dataWithIndex) => {
     });
     const existingData = res.data.values || [];
 
-    // Update existingData with modified rowsoriginalIndex
     dataWithIndex.forEach(({ originalIndex, rowData }) => {
-      existingData[originalIndex] = rowData;
+      if (originalIndex !== undefined) {
+        // Update existing rows
+        existingData[originalIndex] = rowData;
+      } else {
+        // Append new rows
+        existingData.push(rowData);
+      }
     });
 
     await sheets.spreadsheets.values.update({
@@ -136,6 +141,8 @@ ipcMain.handle("save-data", async (event, dataWithIndex) => {
       valueInputOption: "RAW",
       resource: { values: existingData },
     });
+
+    return { success: true };
   } catch (error) {
     console.error("Error saving data:", error);
     throw new Error("Failed to save data");
