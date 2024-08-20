@@ -1,17 +1,53 @@
 {
-  "name": "excel-manager",
+  "name": "leadmasterpro",
   "version": "1.0.0",
-  "description": "",
+  "description": "Lead Master Pro",
   "main": "main.js",
+  "author": "Chiranthan Y",
+  "license": "ISC",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:css": "npx tailwindcss -i ./tailwind.css -o ./dist/tailwind.css --watch"
+    "build:css": "npx tailwindcss -i ./tailwind.css -o ./dist/tailwind.css --watch",
+    "start": "electron main.js",
+    "build": "electron-packager ."
   },
-  "author": "",
-  "license": "ISC",
+  "build": {
+    "appId": "com.unknow.leadmasterpro",
+    "productName": "LeadMasterPro",
+    "copyright": "© 2024 Chiranthan Y",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "zip",
+        "nsis"
+      ]
+    },
+    "files": [
+      "dist/",
+      "main.js",
+      "index.html",
+      "preload.js",
+      "renderer.js",
+      "package.json",
+      "node_modules/",
+      "tailwind.css",
+      "credentials.json",
+      "master.json"
+    ],
+    "directories": {
+      "buildResources": "build"
+    }
+  },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
     "electron": "^31.4.0",
+    "electron-builder": "^24.13.3",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10"
   },

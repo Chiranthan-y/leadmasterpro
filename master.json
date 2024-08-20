@@ -3,5 +3,6 @@
   "SHEET_ID": "1eqkXPTHTHi-C4w_GFS8iQUU83BoYpcAai4QnxYNuxC8",
   "MAIN_RANGE": "Sheet1",
   "USER_RANGE": "User",
-  "DROP_DOWN_RANGE": "DropdownOptions"
+  "DROP_DOWN_RANGE": "DropdownOptions",
+  "STATIC_CELL": ["Ref No", "Counsellor", "Name", "Contact Number", "Email Id"]
 }

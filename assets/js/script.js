@@ -49,6 +49,9 @@ document.getElementById("save-data-btn").addEventListener("click", async () => {
         .forEach((element) => {
           element.style.color = ""; // Reset color to default
         });
+
+      // Reattach event listeners to inputs and selects to ensure they work
+      reattachEventListeners();
     } else {
       throw new Error("Data save failed!");
     }
@@ -100,7 +103,20 @@ document.getElementById("search-box").addEventListener("input", function () {
     }
   });
 });
-//Fucntions
+
+// Function to reattach event listeners to inputs and selects
+function reattachEventListeners() {
+  document
+    .querySelectorAll("#table-container input, #table-container select")
+    .forEach((element) => {
+      element.addEventListener("input", (event) => {
+        event.target.closest("td").style.border = "2px solid red";
+      });
+      element.addEventListener("change", (event) => {
+        event.target.closest("td").style.border = "2px solid red";
+      });
+    });
+}
 
 function createTable(dataWithIndex, dropdownOptions) {
   const tableContainer = document.getElementById("table-container");
@@ -166,7 +182,13 @@ function createTable(dataWithIndex, dropdownOptions) {
       td.className = "px-6 py-4 whitespace-nowrap";
       const header = headers[colIndex]; // Get the header name for the column
 
-      if (header === "Ref No" || header === "Counsellor") {
+      if (
+        header === "Ref No" ||
+        header === "Counsellor" ||
+        header === "Name" ||
+        header === "Contact Number" ||
+        header === "Email Id"
+      ) {
         td.innerText = cell;
       } else if (header === "Follow-up Date") {
         const input = document.createElement("input");
@@ -179,7 +201,8 @@ function createTable(dataWithIndex, dropdownOptions) {
         });
       } else if (dropdownOptions[header]) {
         const select = document.createElement("select");
-        select.className = "w-full px-2 py-1 border border-gray-300 rounded";
+        select.className =
+          "w-full h-8 px-2 py-1 border border-gray-300 rounded";
         dropdownOptions[header].forEach((option) => {
           const optionElement = document.createElement("option");
           optionElement.value = option;
@@ -211,6 +234,9 @@ function createTable(dataWithIndex, dropdownOptions) {
   table.appendChild(thead);
   table.appendChild(tbody);
   tableContainer.appendChild(table);
+
+  // Reattach event listeners after table creation
+  reattachEventListeners();
 }
 
 function addEmptyRow(tbody, dropdownOptions, headers, rowCount) {
