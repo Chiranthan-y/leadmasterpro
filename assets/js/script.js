@@ -49,9 +49,6 @@ document.getElementById("save-data-btn").addEventListener("click", async () => {
         .forEach((element) => {
           element.style.color = ""; // Reset color to default
         });
-
-      // Reattach event listeners to inputs and selects to ensure they work
-      reattachEventListeners();
     } else {
       throw new Error("Data save failed!");
     }
@@ -103,20 +100,7 @@ document.getElementById("search-box").addEventListener("input", function () {
     }
   });
 });
-
-// Function to reattach event listeners to inputs and selects
-function reattachEventListeners() {
-  document
-    .querySelectorAll("#table-container input, #table-container select")
-    .forEach((element) => {
-      element.addEventListener("input", (event) => {
-        event.target.closest("td").style.border = "2px solid red";
-      });
-      element.addEventListener("change", (event) => {
-        event.target.closest("td").style.border = "2px solid red";
-      });
-    });
-}
+//Fucntions
 
 function createTable(dataWithIndex, dropdownOptions) {
   const tableContainer = document.getElementById("table-container");
@@ -234,9 +218,6 @@ function createTable(dataWithIndex, dropdownOptions) {
   table.appendChild(thead);
   table.appendChild(tbody);
   tableContainer.appendChild(table);
-
-  // Reattach event listeners after table creation
-  reattachEventListeners();
 }
 
 function addEmptyRow(tbody, dropdownOptions, headers, rowCount) {
