@@ -86,7 +86,7 @@ document.getElementById("search-box").addEventListener("input", function () {
     const cells = Array.from(row.querySelectorAll("td"));
     const rowText = cells
       .map((cell) => {
-        const inputElement = cell.querySelector("input, select");
+        const inputElement = cell.querySelector("input, select, textarea");
         return inputElement
           ? inputElement.value.toLowerCase()
           : cell.innerText.toLowerCase();
@@ -100,8 +100,8 @@ document.getElementById("search-box").addEventListener("input", function () {
     }
   });
 });
-//Fucntions
 
+//Fucntions
 function createTable(dataWithIndex, dropdownOptions) {
   const tableContainer = document.getElementById("table-container");
   tableContainer.innerHTML = "";
@@ -120,14 +120,14 @@ function createTable(dataWithIndex, dropdownOptions) {
     // Header cell
     const th = document.createElement("th");
     th.className =
-      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 z-10";
+      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 z-1";
     th.innerText = headerCell;
     headerRow.appendChild(th);
 
     // Filter cell
     const filterTh = document.createElement("th");
     filterTh.className =
-      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-10 z-10";
+      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-10 z-1";
 
     const filterSelect = document.createElement("select");
     filterSelect.className = "w-full px-2 py-1 border border-gray-300 rounded";
@@ -156,7 +156,7 @@ function createTable(dataWithIndex, dropdownOptions) {
   thead.appendChild(headerRow);
   thead.appendChild(filterRow);
 
-  // Create table body with input fields or dropdowns
+  // Create table body with textarea fields or dropdowns
   dataWithIndex.slice(1).forEach(({ row, originalIndex }) => {
     const tr = document.createElement("tr");
     tr.dataset.originalIndex = originalIndex; // Store original index
@@ -195,14 +195,28 @@ function createTable(dataWithIndex, dropdownOptions) {
           td.style.border = "2px solid red"; // Highlight the cell while editing
         });
       } else {
-        const input = document.createElement("input");
-        input.type = "text";
-        input.value = cell;
-        input.className = "w-full px-2 py-1 rounded";
-        td.appendChild(input);
-        input.addEventListener("input", () => {
+        const textarea = document.createElement("textarea");
+        textarea.value = cell;
+        textarea.className =
+          "w-full px-2 py-1 rounded resize-none bg-transparent focus:outline-none border";
+
+        // Set initial minimum height equivalent to 'h-8'
+        textarea.style.minHeight = "2rem"; // 'h-8' is equivalent to 2rem or 32px
+        textarea.style.maxHeight = "5rem";
+
+        // Adjust the height to fit the content
+        textarea.style.height = "auto";
+        textarea.style.overflowY = "hidden";
+        textarea.style.height = textarea.scrollHeight + "px"; // Adjust height based on content
+
+        // Adjust dynamically when content changes
+        textarea.addEventListener("input", () => {
+          textarea.style.height = "auto"; // Reset the height before recalculating
+          textarea.style.height = textarea.scrollHeight + "px"; // Adjust height dynamically
           td.style.border = "2px solid red"; // Highlight the cell while editing
         });
+
+        td.appendChild(textarea);
       }
       tr.appendChild(td);
     });
@@ -233,10 +247,10 @@ function extractTableDataWithIndex() {
     const cells = Array.from(row.querySelectorAll("td"));
 
     cells.forEach((cell) => {
-      const inputElement = cell.querySelector("input, select");
+      const inputElement = cell.querySelector("input, select, textarea");
 
       if (inputElement) {
-        rowData.push(inputElement.value); // Get value from input or select
+        rowData.push(inputElement.value); // Get value from input, select, or textarea
       } else {
         rowData.push(cell.innerText); // Get inner text for non-editable cells
       }
@@ -256,8 +270,10 @@ function filterTable(colIndex, filterValue) {
     const cells = Array.from(row.querySelectorAll("td"));
     let cellValue = cells[colIndex].innerText.toLowerCase();
 
-    // If there's an input or select element, get its value
-    const inputElement = cells[colIndex].querySelector("input, select");
+    // If there's an input, select, or textarea element, get its value
+    const inputElement = cells[colIndex].querySelector(
+      "input, select, textarea"
+    );
     if (inputElement) {
       cellValue = inputElement.value.toLowerCase();
     }

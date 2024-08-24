@@ -60,12 +60,18 @@ ipcMain.handle("load-data", async (event, loggedInUser) => {
       range: mainRange,
     });
     const data = res.data.values || [];
+
     if (data.length === 0) {
       return []; // No data found
     }
+
+    // Normalize the data by ensuring each row has the same number of columns
+    const maxColumns = Math.max(...data.map((row) => row.length));
     const normalizedData = data.map((row) => {
-      const filledRow = row.map((cell) => cell ?? "");
-      while (filledRow.length < Math.max(...data.map((row) => row.length))) {
+      const filledRow = row.map((cell) =>
+        cell !== null ? String(cell).replace(/\\n/g, "\n") : ""
+      );
+      while (filledRow.length < maxColumns) {
         filledRow.push("");
       }
       return filledRow;
@@ -84,7 +90,7 @@ ipcMain.handle("load-data", async (event, loggedInUser) => {
       .map((row, index) => ({ row, originalIndex: index }))
       .filter(({ row, originalIndex }) => {
         if (originalIndex === 0) return true; // Include header row
-        return row[counsellorIndex] == loggedInUser;
+        return row[counsellorIndex] === loggedInUser;
       });
 
     return filteredRowsWithIndex;
