@@ -1,4 +1,13 @@
 let loggedInUser = "";
+const NonEditablefields = [
+  "Ref No",
+  "Counsellor",
+  "Name",
+  "Contact Number",
+  "Email Id",
+  "Country code",
+];
+const DateSelector = "Follow-up Date";
 
 // Event listener for login button
 document.getElementById("login-btn").addEventListener("click", async () => {
@@ -36,8 +45,6 @@ document.getElementById("save-data-btn").addEventListener("click", async () => {
     const response = await window.api.saveData(dataWithIndex);
     if (response.success) {
       hideSpinner();
-      alert("Data saved successfully!");
-
       // Reset the border color of all cells to default after saving
       document.querySelectorAll("#table-container td").forEach((cell) => {
         cell.style.border = ""; // Reset border to default
@@ -65,15 +72,8 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   document.getElementById("login-page").classList.remove("hidden");
   loggedInUser = ""; // Clear the logged-in username on logout
   hideSpinner();
-
   // Clear the table data
   document.getElementById("table-container").innerHTML = "";
-});
-
-// Event listener for adding a new row
-document.getElementById("add-row-btn").addEventListener("click", () => {
-  const tbody = document.querySelector("#table-container table tbody");
-  addEmptyRow(tbody, dropdownOptions, data[0], data.length);
 });
 
 // Event listener for the search box
@@ -120,14 +120,14 @@ function createTable(dataWithIndex, dropdownOptions) {
     // Header cell
     const th = document.createElement("th");
     th.className =
-      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
+      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 z-10";
     th.innerText = headerCell;
     headerRow.appendChild(th);
 
     // Filter cell
     const filterTh = document.createElement("th");
     filterTh.className =
-      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
+      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-10 z-10";
 
     const filterSelect = document.createElement("select");
     filterSelect.className = "w-full px-2 py-1 border border-gray-300 rounded";
@@ -166,18 +166,12 @@ function createTable(dataWithIndex, dropdownOptions) {
       td.className = "px-6 py-4 whitespace-nowrap";
       const header = headers[colIndex]; // Get the header name for the column
 
-      if (
-        header === "Ref No" ||
-        header === "Counsellor" ||
-        header === "Name" ||
-        header === "Contact Number" ||
-        header === "Email Id"
-      ) {
+      if (NonEditablefields.includes(header)) {
         td.innerText = cell;
-      } else if (header === "Follow-up Date") {
+      } else if (header === DateSelector) {
         const input = document.createElement("input");
         input.type = "date";
-        input.value = cell || new Date().toISOString().split("T")[0];
+        input.value = new Date(cell).toISOString().split("T")[0];
         input.className = "w-full px-2 py-1 border border-gray-300 rounded";
         td.appendChild(input);
         input.addEventListener("input", () => {
@@ -218,47 +212,6 @@ function createTable(dataWithIndex, dropdownOptions) {
   table.appendChild(thead);
   table.appendChild(tbody);
   tableContainer.appendChild(table);
-}
-
-function addEmptyRow(tbody, dropdownOptions, headers, rowCount) {
-  const tr = document.createElement("tr");
-  headers.forEach((header, colIndex) => {
-    const td = document.createElement("td");
-
-    if (header === "Ref No") {
-      // Auto-generate Ref No
-      const year = new Date().getFullYear();
-      const refNo = `${year}|${rowCount}`;
-      td.innerText = refNo;
-    } else if (header === "Counsellor") {
-      // Keep Counsellor cell empty or pre-filled with logged-in user
-      td.innerText = LoggedInUser;
-    } else if (header === "Follow-up Date") {
-      // Create a date input with the current date
-      const input = document.createElement("input");
-      input.type = "date";
-      input.value = new Date().toISOString().split("T")[0];
-      td.appendChild(input);
-    } else if (dropdownOptions[header]) {
-      // Create a select element if dropdown options exist for this column
-      const select = document.createElement("select");
-      dropdownOptions[header].forEach((option) => {
-        const optionElement = document.createElement("option");
-        optionElement.value = option;
-        optionElement.text = option;
-        select.appendChild(optionElement);
-      });
-      td.appendChild(select);
-    } else {
-      // Otherwise, create a text input
-      const input = document.createElement("input");
-      input.type = "text";
-      td.appendChild(input);
-    }
-    tr.appendChild(td);
-  });
-
-  tbody.appendChild(tr);
 }
 
 function showSpinner() {

@@ -13,13 +13,24 @@
   <body class="bg-gray-100 p-6">
     <!-- Login Page -->
     <div id="login-page" class="w-full max-w-sm mx-auto">
-      <h2 class="text-2xl font-bold mb-4">Login</h2>
+      <!-- Logo and Title -->
+      <div class="text-center mb-6">
+        <img
+          src="./assets/images/ashwa_logo.png"
+          alt="Ashwa Logo"
+          class="h-16 mx-auto mb-4"
+        />
+        <h1 class="text-4xl font-bold text-gray-800">Lead Master Pro</h1>
+      </div>
+
+      <!-- Login Form -->
+      <h2 class="text-2xl font-bold mb-4 text-center">Login</h2>
       <div class="mb-4">
         <label class="block text-gray-700">Username</label>
         <input
           type="text"
           id="username"
-          class="w-full px-3 py-2 border border-gray-300 rounded"
+          class="w-full px-3 py-2 border border-gray-300 rounded h-10"
         />
       </div>
       <div class="mb-4">
@@ -27,7 +38,7 @@
         <input
           type="password"
           id="password"
-          class="w-full px-3 py-2 border border-gray-300 rounded"
+          class="w-full px-3 py-2 border border-gray-300 rounded h-10"
         />
       </div>
       <button
@@ -36,11 +47,12 @@
       >
         Login
       </button>
-      <p id="login-status" class="text-red-500 mt-4"></p>
+      <p id="login-status" class="text-red-500 mt-4 text-center"></p>
     </div>
 
     <!-- Main Page -->
-    <div id="main-page">
+    <div id="main-page" class="hidden">
+      <!-- Initially hidden -->
       <div class="w-full mx-auto">
         <div
           class="w-full mx-auto p-6 bg-white rounded-lg flex items-center justify-between"
@@ -58,7 +70,8 @@
           <div class="text-center flex-1">
             <h1 class="text-4xl font-bold text-gray-800">Lead Master Pro</h1>
             <h2 class="text-lg font-semibold text-gray-500">
-              Logged in as: <span class="text-blue-500">[Username]</span>
+              Logged in as:
+              <span class="text-blue-500" id="logged-in-user">[Username]</span>
             </h2>
           </div>
 
@@ -100,7 +113,7 @@
           />
         </div>
 
-        <div class="overflow-auto max-h-[80vh] border border-gray-300 rounded">
+        <div class="overflow-auto max-h-screen border border-gray-300 rounded">
           <div id="table-container">
             <table class="min-w-full divide-y divide-gray-200">
               <thead>
