@@ -12,7 +12,7 @@
   </head>
   <body class="bg-gray-100 p-6">
     <!-- Login Page -->
-    <div id="login-page" class="w-full max-w-sm mx-auto">
+    <div id="login-page" class="w-full max-w-sm mx-auto hidden">
       <!-- Logo and Title -->
       <div class="text-center mb-6">
         <img
@@ -51,8 +51,7 @@
     </div>
 
     <!-- Main Page -->
-    <div id="main-page" class="hidden">
-      <!-- Initially hidden -->
+    <div id="main-page" class="">
       <div class="w-full mx-auto">
         <div
           class="w-full mx-auto p-6 bg-white rounded-lg flex items-center justify-between"
@@ -92,7 +91,7 @@
             Load Data
           </button>
           <button
-            id="save-data-btn"
+            id="global-save-btn"
             class="bg-green-500 text-white px-4 py-2 rounded"
           >
             Save Data
@@ -114,15 +113,7 @@
         </div>
 
         <div class="overflow-auto max-h-screen border border-gray-300 rounded">
-          <div id="table-container">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr id="header-row"></tr>
-                <tr id="filter-row"></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
+          <div id="accordion-container" class="space-y-4"></div>
         </div>
       </div>
     </div>

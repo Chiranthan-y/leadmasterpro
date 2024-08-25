@@ -1,13 +1,16 @@
-let loggedInUser = "";
-const NonEditablefields = [
+let loggedInUser = "Counsellor2";
+const NonEditable = ["Ref No", "Counsellor", "Contact Number"];
+
+// Header fields to be displayed in the accordion header
+const headerFields = [
   "Ref No",
   "Counsellor",
   "Name",
   "Contact Number",
   "Email Id",
-  "Country code",
+  "Call Remarks",
+  "Follow-up Date",
 ];
-const DateSelector = "Follow-up Date";
 
 // Event listener for login button
 document.getElementById("login-btn").addEventListener("click", async () => {
@@ -31,257 +34,232 @@ document.getElementById("login-btn").addEventListener("click", async () => {
 // Event listener for loading data
 document.getElementById("load-data-btn").addEventListener("click", async () => {
   showSpinner();
-  const data = await window.api.loadData(loggedInUser); // Pass the logged-in username
-  const dropdownOptions = await window.api.loadDropdownOptions();
-  createTable(data, dropdownOptions);
-  hideSpinner();
-});
-
-document.getElementById("save-data-btn").addEventListener("click", async () => {
-  showSpinner();
-
-  const dataWithIndex = extractTableDataWithIndex();
   try {
-    const response = await window.api.saveData(dataWithIndex);
-    if (response.success) {
-      hideSpinner();
-      // Reset the border color of all cells to default after saving
-      document.querySelectorAll("#table-container td").forEach((cell) => {
-        cell.style.border = ""; // Reset border to default
-      });
-
-      // Reset the text color of all inputs and selects to default after saving
-      document
-        .querySelectorAll("#table-container input, #table-container select")
-        .forEach((element) => {
-          element.style.color = ""; // Reset color to default
-        });
-    } else {
-      throw new Error("Data save failed!");
-    }
+    const data = await window.api.loadData(loggedInUser); // Pass the logged-in username
+    const dropdownOptions = await window.api.loadDropdownOptions();
+    createAccordion(data, dropdownOptions);
   } catch (error) {
+    console.error("Error loading data:", error);
+  } finally {
     hideSpinner();
-    alert("Error saving data: " + error.message);
   }
 });
 
-// Event listener for logout button
-document.getElementById("logout-btn").addEventListener("click", () => {
-  showSpinner();
-  document.getElementById("main-page").style.display = "none";
-  document.getElementById("login-page").classList.remove("hidden");
-  loggedInUser = ""; // Clear the logged-in username on logout
-  hideSpinner();
-  // Clear the table data
-  document.getElementById("table-container").innerHTML = "";
-});
+// Create accordion structure
+function createAccordion(data, dropdownOptions) {
+  const accordionContainer = document.getElementById("accordion-container");
+  accordionContainer.innerHTML = ""; // Clear previous content
 
-// Event listener for the search box
-document.getElementById("search-box").addEventListener("input", function () {
-  const searchValue = this.value.toLowerCase();
-  const table = document.querySelector("#table-container table");
-  const rows = Array.from(table.querySelectorAll("tbody tr"));
+  data.forEach(({ rowData, originalIndex }, index) => {
+    // Create accordion header (non-editable and editable fields)
+    const header = document.createElement("div");
+    header.className =
+      "accordion-header bg-gray-200 px-4 py-2 cursor-pointer rounded flex justify-between items-center";
+    header.setAttribute("data-original-index", originalIndex);
 
-  rows.forEach((row) => {
-    const cells = Array.from(row.querySelectorAll("td"));
-    const rowText = cells
-      .map((cell) => {
-        const inputElement = cell.querySelector("input, select, textarea");
-        return inputElement
-          ? inputElement.value.toLowerCase()
-          : cell.innerText.toLowerCase();
-      })
-      .join(" ");
+    let headerHtml = "";
+    headerFields.forEach((field) => {
+      if (field === "Follow-up Date") {
+        // Editable date input field
+        headerHtml += `
+          <div class="col-span-1">
+            <label class="block text-gray-700">${field}</label>
+            <input type="date" value="${
+              rowData[field] || ""
+            }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" />
+          </div>
+        `;
+      } else if (NonEditable.includes(field)) {
+        // Non-editable fields displayed as labels
+        headerHtml += `
+          <div class="col-span-1">
+            <label class="block text-gray-700">${field}</label>
+            <span class="block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded">${
+              rowData[field] || ""
+            }</span>
+          </div>
+        `;
+      } else if (dropdownOptions[field]) {
+        // Editable dropdown fields
+        headerHtml += `
+          <div class="col-span-1">
+            <label class="block text-gray-700">${field}</label>
+            <select class="w-full px-3 py-2 border border-gray-300 rounded editable-field">
+              ${dropdownOptions[field]
+                .map(
+                  (option) =>
+                    `<option value="${option}" ${
+                      option === rowData[field] ? "selected" : ""
+                    }>${option}</option>`
+                )
+                .join("")}
+            </select>
+          </div>
+        `;
+      } else {
+        // Editable text input fields
+        headerHtml += `
+          <div class="col-span-1">
+            <label class="block text-gray-700">${field}</label>
+            <input type="text" value="${
+              rowData[field] || ""
+            }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" />
+          </div>
+        `;
+      }
+    });
 
-    if (rowText.includes(searchValue)) {
-      row.style.display = ""; // Show row
-    } else {
-      row.style.display = "none"; // Hide row
-    }
-  });
-});
+    headerHtml += `<div class="col-span-1 flex items-center justify-end">
+                    <button type="button" class="save-row bg-blue-500 text-white px-4 py-2 rounded mr-2" data-index="${originalIndex}">Save</button>
+                  </div>`;
 
-//Fucntions
-function createTable(dataWithIndex, dropdownOptions) {
-  const tableContainer = document.getElementById("table-container");
-  tableContainer.innerHTML = "";
+    header.innerHTML = `
+      <div class="grid grid-cols-4 gap-4 w-full">${headerHtml}</div>
+      <div class="flex items-center">
+        <button class="accordion-toggle">▼</button>
+      </div>
+    `;
 
-  const table = document.createElement("table");
-  table.className = "min-w-full divide-y divide-gray-200";
-  const thead = document.createElement("thead");
-  const tbody = document.createElement("tbody");
-
-  // Create table header
-  const headerRow = document.createElement("tr");
-  const filterRow = document.createElement("tr");
-  const headers = dataWithIndex[0].row;
-
-  headers.forEach((headerCell, colIndex) => {
-    // Header cell
-    const th = document.createElement("th");
-    th.className =
-      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 z-1";
-    th.innerText = headerCell;
-    headerRow.appendChild(th);
-
-    // Filter cell
-    const filterTh = document.createElement("th");
-    filterTh.className =
-      "px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-10 z-1";
-
-    const filterSelect = document.createElement("select");
-    filterSelect.className = "w-full px-2 py-1 border border-gray-300 rounded";
-    filterSelect.innerHTML = `<option value="">Filter ${headerCell}</option>`;
-
-    // Generate unique options for the dropdown filter
-    const uniqueValues = new Set(
-      dataWithIndex.slice(1).map(({ row }) => row[colIndex])
+    // Create accordion content (editable form for remaining fields)
+    const content = document.createElement("div");
+    content.className = "accordion-content bg-white px-4 py-2 hidden";
+    content.innerHTML = generateForm(
+      rowData,
+      dropdownOptions,
+      headerFields,
+      originalIndex
     );
 
-    uniqueValues.forEach((value) => {
-      const option = document.createElement("option");
-      option.value = value;
-      option.text = value;
-      filterSelect.appendChild(option);
+    // Toggle accordion content visibility when clicking the accordion-toggle button
+    header.querySelector(".accordion-toggle").addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent other event handlers on the header from firing
+      content.classList.toggle("hidden");
     });
 
-    filterSelect.addEventListener("change", () => {
-      filterTable(colIndex, filterSelect.value.toLowerCase());
+    // Add event listener to each editable field for highlighting
+    header.querySelectorAll(".editable-field").forEach((input) => {
+      input.addEventListener("input", () => {
+        header.classList.add("bg-yellow-100"); // Highlight the row when editing
+      });
     });
 
-    filterTh.appendChild(filterSelect);
-    filterRow.appendChild(filterTh);
+    // Append header and content to accordion container
+    accordionContainer.appendChild(header);
+    accordionContainer.appendChild(content);
   });
-
-  thead.appendChild(headerRow);
-  thead.appendChild(filterRow);
-
-  // Create table body with textarea fields or dropdowns
-  dataWithIndex.slice(1).forEach(({ row, originalIndex }) => {
-    const tr = document.createElement("tr");
-    tr.dataset.originalIndex = originalIndex; // Store original index
-
-    row.forEach((cell, colIndex) => {
-      const td = document.createElement("td");
-      td.className = "px-6 py-4 whitespace-nowrap";
-      const header = headers[colIndex]; // Get the header name for the column
-
-      if (NonEditablefields.includes(header)) {
-        td.innerText = cell;
-      } else if (header === DateSelector) {
-        const input = document.createElement("input");
-        input.type = "date";
-        input.value = new Date(cell).toISOString().split("T")[0];
-        input.className = "w-full px-2 py-1 border border-gray-300 rounded";
-        td.appendChild(input);
-        input.addEventListener("input", () => {
-          td.style.border = "2px solid red"; // Highlight the cell while editing
-        });
-      } else if (dropdownOptions[header]) {
-        const select = document.createElement("select");
-        select.className =
-          "w-full h-8 px-2 py-1 border border-gray-300 rounded";
-        dropdownOptions[header].forEach((option) => {
-          const optionElement = document.createElement("option");
-          optionElement.value = option;
-          optionElement.text = option;
-          if (option === cell) {
-            optionElement.selected = true;
-          }
-          select.appendChild(optionElement);
-        });
-        td.appendChild(select);
-        select.addEventListener("change", () => {
-          td.style.border = "2px solid red"; // Highlight the cell while editing
-        });
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = cell;
-        textarea.className =
-          "w-full px-2 py-1 rounded resize-none bg-transparent focus:outline-none border";
-
-        // Set initial minimum height equivalent to 'h-8'
-        textarea.style.minHeight = "2rem"; // 'h-8' is equivalent to 2rem or 32px
-        textarea.style.maxHeight = "5rem";
-
-        // Adjust the height to fit the content
-        textarea.style.height = "auto";
-        textarea.style.overflowY = "hidden";
-        textarea.style.height = textarea.scrollHeight + "px"; // Adjust height based on content
-
-        // Adjust dynamically when content changes
-        textarea.addEventListener("input", () => {
-          textarea.style.height = "auto"; // Reset the height before recalculating
-          textarea.style.height = textarea.scrollHeight + "px"; // Adjust height dynamically
-          td.style.border = "2px solid red"; // Highlight the cell while editing
-        });
-
-        td.appendChild(textarea);
-      }
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
-  });
-
-  table.appendChild(thead);
-  table.appendChild(tbody);
-  tableContainer.appendChild(table);
 }
 
+function generateForm(row, dropdownOptions, headerFields, originalIndex) {
+  const fields = Object.keys(row).filter(
+    (field) => !headerFields.includes(field)
+  );
+
+  // Determine the number of columns in the grid based on the number of fields
+  const columns = fields.length > 3 ? 3 : fields.length;
+  let formHtml = `<form class="grid grid-cols-${columns} gap-4">`;
+
+  fields.forEach((field) => {
+    if (field === "Follow-up Date") {
+      formHtml += `
+        <div class="col-span-1">
+          <label class="block text-gray-700">${field}</label>
+          <input type="date" value="${
+            row[field] || ""
+          }" class="w-full px-3 py-2 border border-gray-300 rounded" />
+        </div>
+      `;
+    } else if (dropdownOptions[field]) {
+      formHtml += `
+        <div class="col-span-1">
+          <label class="block text-gray-700">${field}</label>
+          <select class="w-full px-3 py-2 border border-gray-300 rounded">
+            ${dropdownOptions[field]
+              .map(
+                (option) =>
+                  `<option value="${option}" ${
+                    option === row[field] ? "selected" : ""
+                  }>${option}</option>`
+              )
+              .join("")}
+          </select>
+        </div>
+      `;
+    } else {
+      formHtml += `
+        <div class="col-span-1">
+          <label class="block text-gray-700">${field}</label>
+          <input type="text" value="${
+            row[field] || ""
+          }" class="w-full px-3 py-2 border border-gray-300 rounded" />
+        </div>
+      `;
+    }
+  });
+
+  formHtml += `</form>`;
+  return formHtml;
+}
+
+// Event listener for saving individual rows
+document
+  .getElementById("accordion-container")
+  .addEventListener("click", async (e) => {
+    if (e.target.classList.contains("save-row")) {
+      const header = e.target.closest(".accordion-header");
+      const form = header.nextElementSibling.querySelector("form");
+      const originalIndex = e.target.dataset.index;
+      const updatedRow = {};
+
+      // Collect all input values from both the header and the form
+      header.querySelectorAll("input, select").forEach((input) => {
+        updatedRow[input.previousElementSibling.innerText] = input.value;
+      });
+      form.querySelectorAll("input, select").forEach((input) => {
+        updatedRow[input.previousElementSibling.innerText] = input.value;
+      });
+
+      // Send the updated row data to the backend for saving
+      showSpinner();
+      try {
+        await window.api.saveRow(originalIndex, updatedRow);
+      } catch (error) {
+        console.error("Error saving row:", error);
+      } finally {
+        hideSpinner();
+      }
+    }
+  });
+
+// Show the spinner
 function showSpinner() {
   document.getElementById("spinner").classList.remove("hidden");
 }
 
+// Hide the spinner
 function hideSpinner() {
   document.getElementById("spinner").classList.add("hidden");
 }
 
-function extractTableDataWithIndex() {
-  const table = document.querySelector("#table-container table");
-  const rows = Array.from(table.querySelectorAll("tbody tr"));
-  const extractedData = [];
-
-  rows.forEach((row) => {
-    const originalIndex = row.dataset.originalIndex;
-    const rowData = [];
-    const cells = Array.from(row.querySelectorAll("td"));
-
-    cells.forEach((cell) => {
-      const inputElement = cell.querySelector("input, select, textarea");
-
-      if (inputElement) {
-        rowData.push(inputElement.value); // Get value from input, select, or textarea
-      } else {
-        rowData.push(cell.innerText); // Get inner text for non-editable cells
-      }
-    });
-
-    extractedData.push({ originalIndex, rowData });
-  });
-
-  return extractedData;
-}
-
-function filterTable(colIndex, filterValue) {
-  const table = document.querySelector("#table-container table");
-  const rows = Array.from(table.querySelectorAll("tbody tr"));
-
-  rows.forEach((row) => {
-    const cells = Array.from(row.querySelectorAll("td"));
-    let cellValue = cells[colIndex].innerText.toLowerCase();
-
-    // If there's an input, select, or textarea element, get its value
-    const inputElement = cells[colIndex].querySelector(
-      "input, select, textarea"
-    );
-    if (inputElement) {
-      cellValue = inputElement.value.toLowerCase();
-    }
-
-    if (!filterValue || cellValue.includes(filterValue)) {
-      row.style.display = ""; // Show row
-    } else {
-      row.style.display = "none"; // Hide row
+// Event listener for global save button
+document
+  .getElementById("global-save-btn")
+  .addEventListener("click", async () => {
+    showSpinner();
+    try {
+      const allData = getAllDataFromAccordion(); // Function to collect all data from the accordion
+      console.log({ allData });
+      await window.api.saveData(allData); // Save data using the API
+      alert("Data saved successfully!");
+    } catch (error) {
+      console.error("Error saving data:", error);
+      alert("Failed to save data.");
+    } finally {
+      hideSpinner();
     }
   });
-}
+
+// Event listener for logout button
+document.getElementById("logout-btn").addEventListener("click", () => {
+  document.getElementById("main-page").style.display = "none";
+  document.getElementById("login-page").classList.remove("hidden");
+});
