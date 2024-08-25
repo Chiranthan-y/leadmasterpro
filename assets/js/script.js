@@ -1,5 +1,11 @@
-let loggedInUser = "Counsellor2";
-const NonEditable = ["Ref No", "Counsellor", "Contact Number"];
+let loggedInUser = "";
+const NonEditable = [
+  "Ref No",
+  "Counsellor",
+  "Name",
+  "Contact Number",
+  "Email Id",
+];
 
 // Header fields to be displayed in the accordion header
 const headerFields = [
@@ -54,7 +60,7 @@ function createAccordion(data, dropdownOptions) {
     // Create accordion header (non-editable and editable fields)
     const header = document.createElement("div");
     header.className =
-      "accordion-header bg-gray-200 px-4 py-2 cursor-pointer rounded flex justify-between items-center";
+      "accordion-header bg-gray-200 px-2 py-1 cursor-pointer rounded flex justify-between items-center";
     header.setAttribute("data-original-index", originalIndex);
 
     let headerHtml = "";
@@ -63,7 +69,7 @@ function createAccordion(data, dropdownOptions) {
         // Editable date input field
         headerHtml += `
           <div class="col-span-1">
-            <label class="block text-gray-700">${field}</label>
+            <label class="block text-gray-700 font-bold uppercase">${field}</label>
             <input type="date" value="${
               rowData[field] || ""
             }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" />
@@ -73,8 +79,8 @@ function createAccordion(data, dropdownOptions) {
         // Non-editable fields displayed as labels
         headerHtml += `
           <div class="col-span-1">
-            <label class="block text-gray-700">${field}</label>
-            <span class="block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded">${
+            <label class="block text-gray-700 font-bold">${field}</label>
+            <span class="block w-full py-2 font-semibold text-black">${
               rowData[field] || ""
             }</span>
           </div>
@@ -83,7 +89,7 @@ function createAccordion(data, dropdownOptions) {
         // Editable dropdown fields
         headerHtml += `
           <div class="col-span-1">
-            <label class="block text-gray-700">${field}</label>
+            <label class="block text-gray-700 font-bold uppercase">${field}</label>
             <select class="w-full px-3 py-2 border border-gray-300 rounded editable-field">
               ${dropdownOptions[field]
                 .map(
@@ -100,7 +106,7 @@ function createAccordion(data, dropdownOptions) {
         // Editable text input fields
         headerHtml += `
           <div class="col-span-1">
-            <label class="block text-gray-700">${field}</label>
+            <label class="block text-gray-700 font-bold uppercase">${field}</label>
             <input type="text" value="${
               rowData[field] || ""
             }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" />
@@ -109,14 +115,13 @@ function createAccordion(data, dropdownOptions) {
       }
     });
 
-    headerHtml += `<div class="col-span-1 flex items-center justify-end">
-                    <button type="button" class="save-row bg-blue-500 text-white px-4 py-2 rounded mr-2" data-index="${originalIndex}">Save</button>
-                  </div>`;
-
     header.innerHTML = `
-      <div class="grid grid-cols-4 gap-4 w-full">${headerHtml}</div>
-      <div class="flex items-center">
-        <button class="accordion-toggle">▼</button>
+      <div class="grid grid-cols-5 gap-2 w-full">${headerHtml}</div>
+      <div class="col-span-1 flex items-center justify-end">
+          <button type="button" class="save-row bg-green-500 text-white px-4 py-2 rounded mr-2" data-index="${originalIndex}">Save</button>
+      </div>
+      <div class="flex items-center px-1">
+        <button class="accordion-toggle">More Details</button>
       </div>
     `;
 
@@ -162,7 +167,7 @@ function generateForm(row, dropdownOptions, headerFields, originalIndex) {
     if (field === "Follow-up Date") {
       formHtml += `
         <div class="col-span-1">
-          <label class="block text-gray-700">${field}</label>
+          <label class="block text-gray-700 font-bold uppercase">${field}</label>
           <input type="date" value="${
             row[field] || ""
           }" class="w-full px-3 py-2 border border-gray-300 rounded" />
@@ -171,7 +176,7 @@ function generateForm(row, dropdownOptions, headerFields, originalIndex) {
     } else if (dropdownOptions[field]) {
       formHtml += `
         <div class="col-span-1">
-          <label class="block text-gray-700">${field}</label>
+          <label class="block text-gray-700 font-bold uppercase">${field}</label>
           <select class="w-full px-3 py-2 border border-gray-300 rounded">
             ${dropdownOptions[field]
               .map(
@@ -187,7 +192,7 @@ function generateForm(row, dropdownOptions, headerFields, originalIndex) {
     } else {
       formHtml += `
         <div class="col-span-1">
-          <label class="block text-gray-700">${field}</label>
+          <label class="block text-gray-700 font-bold uppercase">${field}</label>
           <input type="text" value="${
             row[field] || ""
           }" class="w-full px-3 py-2 border border-gray-300 rounded" />
