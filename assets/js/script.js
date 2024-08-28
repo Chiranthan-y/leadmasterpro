@@ -3,7 +3,7 @@ let loggedInUser = "";
 let filterFields = [
   "Call Remarks",
   "Follow-up Date",
-  "Vendor / partner",
+  "Vendor / Partner",
   "Country code",
 ];
 let NonEditable = [
@@ -22,8 +22,8 @@ const headerFields = [
   "Email Id",
   "Call Remarks",
   "Follow-up Date",
-  "Vendor / partner",
-  "Education Details",
+  "Vendor / Partner",
+  "Intake & Education Details",
   "Remark",
 ];
 
