@@ -124,18 +124,26 @@ ipcMain.handle("load-dropdown-options", async () => {
   }
 });
 
-// Handle saving data
 ipcMain.handle("save-data", async (event, dataWithIndex) => {
   try {
-    console.log({ dataWithIndex });
+    // Fetch the existing data including headers
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: mainRange,
     });
     const existingData = res.data.values || [];
 
+    // Get the headers from the first row of the existing data
+    const headers = existingData[0];
+
     dataWithIndex.forEach(({ originalIndex, rowData }) => {
-      const rowArray = Object.values(rowData);
+      const rowArray = new Array(headers.length).fill(""); // Create an array to store the row data
+
+      headers.forEach((header, index) => {
+        if (rowData[header] !== undefined) {
+          rowArray[index] = rowData[header]; // Match header with rowData
+        }
+      });
 
       if (originalIndex !== undefined && originalIndex < existingData.length) {
         // Update existing rows
@@ -146,6 +154,7 @@ ipcMain.handle("save-data", async (event, dataWithIndex) => {
       }
     });
 
+    // Write back all data
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
       range: mainRange,
@@ -156,6 +165,6 @@ ipcMain.handle("save-data", async (event, dataWithIndex) => {
     return { success: true };
   } catch (error) {
     console.error("Error saving data:", error);
-    throw new Error("Failed to save data");
+    return { success: false, error: "Failed to save data." };
   }
 });

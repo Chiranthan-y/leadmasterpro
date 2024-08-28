@@ -3,16 +3,16 @@ const NonEditable = [
   "Ref No",
   "Counsellor",
   "Name",
+  "Country code",
   "Contact Number",
   "Email Id",
 ];
 
-// Header fields to be displayed in the accordion header
 const headerFields = [
   "Ref No",
-  "Counsellor",
   "Name",
   "Contact Number",
+  "Country code",
   "Email Id",
   "Call Remarks",
   "Follow-up Date",
@@ -51,7 +51,33 @@ document.getElementById("load-data-btn").addEventListener("click", async () => {
   }
 });
 
-// Create accordion structure
+// Global save button
+document
+  .getElementById("global-save-btn")
+  .addEventListener("click", async () => {
+    showSpinner();
+    try {
+      const allData = getAllDataFromAccordion(); // Collect all data from the accordion
+      await window.api.saveData(allData); // Save all data using the API
+      alert("All rows saved successfully.");
+    } catch (error) {
+      console.error("Error saving data:", error);
+      alert(`Failed to save data: ${error.message}`);
+    } finally {
+      hideSpinner();
+    }
+  });
+// Event listener for logout button
+document.getElementById("logout-btn").addEventListener("click", () => {
+  showSpinner();
+  document.getElementById("main-page").style.display = "none";
+  document.getElementById("login-page").classList.remove("hidden");
+  loggedInUser = ""; // Clear the logged-in username on logout
+  // Clear the table data
+  document.getElementById("table-container").innerHTML = "";
+  hideSpinner();
+});
+
 function createAccordion(data, dropdownOptions) {
   const accordionContainer = document.getElementById("accordion-container");
   accordionContainer.innerHTML = ""; // Clear previous content
@@ -72,7 +98,7 @@ function createAccordion(data, dropdownOptions) {
             <label class="block text-gray-700 font-bold uppercase">${field}</label>
             <input type="date" value="${
               rowData[field] || ""
-            }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" />
+            }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" data-field-name="${field}" />
           </div>
         `;
       } else if (NonEditable.includes(field)) {
@@ -80,9 +106,9 @@ function createAccordion(data, dropdownOptions) {
         headerHtml += `
           <div class="col-span-1">
             <label class="block text-gray-700 font-bold">${field}</label>
-            <span class="block w-full py-2 font-semibold text-black">${
-              rowData[field] || ""
-            }</span>
+            <span class="block w-full py-2 font-semibold text-black" data-field-name="${field}">${
+          rowData[field] || ""
+        }</span>
           </div>
         `;
       } else if (dropdownOptions[field]) {
@@ -90,7 +116,7 @@ function createAccordion(data, dropdownOptions) {
         headerHtml += `
           <div class="col-span-1">
             <label class="block text-gray-700 font-bold uppercase">${field}</label>
-            <select class="w-full px-3 py-2 border border-gray-300 rounded editable-field">
+            <select class="w-full px-3 py-2 border border-gray-300 rounded editable-field" data-field-name="${field}">
               ${dropdownOptions[field]
                 .map(
                   (option) =>
@@ -109,7 +135,7 @@ function createAccordion(data, dropdownOptions) {
             <label class="block text-gray-700 font-bold uppercase">${field}</label>
             <input type="text" value="${
               rowData[field] || ""
-            }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" />
+            }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" data-field-name="${field}" />
           </div>
         `;
       }
@@ -117,9 +143,6 @@ function createAccordion(data, dropdownOptions) {
 
     header.innerHTML = `
       <div class="grid grid-cols-5 gap-2 w-full">${headerHtml}</div>
-      <div class="col-span-1 flex items-center justify-end">
-          <button type="button" class="save-row bg-green-500 text-white px-4 py-2 rounded mr-2" data-index="${originalIndex}">Save</button>
-      </div>
       <div class="flex items-center px-1">
         <button class="accordion-toggle">More Details</button>
       </div>
@@ -141,19 +164,28 @@ function createAccordion(data, dropdownOptions) {
       content.classList.toggle("hidden");
     });
 
-    // Add event listener to each editable field for highlighting
-    header.querySelectorAll(".editable-field").forEach((input) => {
-      input.addEventListener("input", () => {
-        header.classList.add("bg-yellow-100"); // Highlight the row when editing
-      });
-    });
-
     // Append header and content to accordion container
     accordionContainer.appendChild(header);
     accordionContainer.appendChild(content);
+
+    // Add event listener to highlight edited fields in header
+    const editableFields = header.querySelectorAll(".editable-field");
+    editableFields.forEach((field) => {
+      field.addEventListener("input", () => {
+        field.classList.add("border-red-500");
+      });
+    });
+
+    // Add event listener to highlight edited fields in content
+    const contentEditableFields = content.querySelectorAll(".editable-field");
+    contentEditableFields.forEach((field) => {
+      field.addEventListener("input", () => {
+        field.classList.add("border-red-500");
+      });
+    });
   });
 }
-
+// Function to generate the form in the accordion content
 function generateForm(row, dropdownOptions, headerFields, originalIndex) {
   const fields = Object.keys(row).filter(
     (field) => !headerFields.includes(field)
@@ -170,14 +202,14 @@ function generateForm(row, dropdownOptions, headerFields, originalIndex) {
           <label class="block text-gray-700 font-bold uppercase">${field}</label>
           <input type="date" value="${
             row[field] || ""
-          }" class="w-full px-3 py-2 border border-gray-300 rounded" />
+          }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" data-field-name="${field}" />
         </div>
       `;
     } else if (dropdownOptions[field]) {
       formHtml += `
         <div class="col-span-1">
           <label class="block text-gray-700 font-bold uppercase">${field}</label>
-          <select class="w-full px-3 py-2 border border-gray-300 rounded">
+          <select class="w-full px-3 py-2 border border-gray-300 rounded editable-field" data-field-name="${field}">
             ${dropdownOptions[field]
               .map(
                 (option) =>
@@ -195,7 +227,7 @@ function generateForm(row, dropdownOptions, headerFields, originalIndex) {
           <label class="block text-gray-700 font-bold uppercase">${field}</label>
           <input type="text" value="${
             row[field] || ""
-          }" class="w-full px-3 py-2 border border-gray-300 rounded" />
+          }" class="w-full px-3 py-2 border border-gray-300 rounded editable-field" data-field-name="${field}" />
         </div>
       `;
     }
@@ -205,35 +237,44 @@ function generateForm(row, dropdownOptions, headerFields, originalIndex) {
   return formHtml;
 }
 
-// Event listener for saving individual rows
-document
-  .getElementById("accordion-container")
-  .addEventListener("click", async (e) => {
-    if (e.target.classList.contains("save-row")) {
-      const header = e.target.closest(".accordion-header");
-      const form = header.nextElementSibling.querySelector("form");
-      const originalIndex = e.target.dataset.index;
-      const updatedRow = {};
+// Function to collect all data from the accordion
+function getAllDataFromAccordion() {
+  const accordionContainer = document.getElementById("accordion-container");
+  const allData = [];
 
-      // Collect all input values from both the header and the form
-      header.querySelectorAll("input, select").forEach((input) => {
-        updatedRow[input.previousElementSibling.innerText] = input.value;
-      });
-      form.querySelectorAll("input, select").forEach((input) => {
-        updatedRow[input.previousElementSibling.innerText] = input.value;
-      });
+  accordionContainer.querySelectorAll(".accordion-header").forEach((header) => {
+    const rowData = {};
+    const originalIndex = header.dataset.originalIndex;
 
-      // Send the updated row data to the backend for saving
-      showSpinner();
-      try {
-        await window.api.saveRow(originalIndex, updatedRow);
-      } catch (error) {
-        console.error("Error saving row:", error);
-      } finally {
-        hideSpinner();
+    // Collect data from header fields
+    header.querySelectorAll("input, select, span").forEach((element) => {
+      const fieldName = element.dataset.fieldName;
+      if (fieldName) {
+        // For spans, use innerText instead of value
+        if (element.tagName === "SPAN") {
+          rowData[fieldName] = element.innerText;
+        } else {
+          rowData[fieldName] = element.value || element.innerText;
+        }
       }
-    }
+    });
+
+    const content = header.nextElementSibling; // The accordion content is the next sibling
+
+    // Collect data from content fields
+    content.querySelectorAll("input, select").forEach((element) => {
+      const fieldName = element.dataset.fieldName;
+      if (fieldName) {
+        rowData[fieldName] = element.value;
+      }
+    });
+
+    // Include the original index for correct updating
+    allData.push({ rowData, originalIndex });
   });
+
+  return allData;
+}
 
 // Show the spinner
 function showSpinner() {
@@ -244,27 +285,3 @@ function showSpinner() {
 function hideSpinner() {
   document.getElementById("spinner").classList.add("hidden");
 }
-
-// Event listener for global save button
-document
-  .getElementById("global-save-btn")
-  .addEventListener("click", async () => {
-    showSpinner();
-    try {
-      const allData = getAllDataFromAccordion(); // Function to collect all data from the accordion
-      console.log({ allData });
-      await window.api.saveData(allData); // Save data using the API
-      alert("Data saved successfully!");
-    } catch (error) {
-      console.error("Error saving data:", error);
-      alert("Failed to save data.");
-    } finally {
-      hideSpinner();
-    }
-  });
-
-// Event listener for logout button
-document.getElementById("logout-btn").addEventListener("click", () => {
-  document.getElementById("main-page").style.display = "none";
-  document.getElementById("login-page").classList.remove("hidden");
-});
