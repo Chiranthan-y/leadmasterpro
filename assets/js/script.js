@@ -1,5 +1,7 @@
 let loggedInUser = "";
-const NonEditable = [
+
+let filterFields = ["Call Remarks", "Follow-up Date"];
+let NonEditable = [
   "Ref No",
   "Counsellor",
   "Name",
@@ -7,7 +9,6 @@ const NonEditable = [
   "Contact Number",
   "Email Id",
 ];
-
 const headerFields = [
   "Ref No",
   "Name",
@@ -16,6 +17,8 @@ const headerFields = [
   "Email Id",
   "Call Remarks",
   "Follow-up Date",
+  "Vendor / partner",
+  "Remarks",
 ];
 
 // Event listener for login button
@@ -45,7 +48,7 @@ document.getElementById("load-data-btn").addEventListener("click", async () => {
     const dropdownOptions = await window.api.loadDropdownOptions();
     createAccordion(data, dropdownOptions);
   } catch (error) {
-    console.error("Error loading data:", error);
+    console.error(`Error loading data:, ${error}`);
   } finally {
     hideSpinner();
   }
@@ -146,6 +149,109 @@ function createAccordion(data, dropdownOptions) {
   const accordionContainer = document.getElementById("accordion-container");
   accordionContainer.innerHTML = ""; // Clear previous content
 
+  const filterContainer = document.getElementById("filter-container");
+  filterContainer.innerHTML = ""; // Clear previous filters
+
+  // Create dropdown filters for each field with unique values
+  let filterHtml = filterFields
+    .map((field) => {
+      if (field === "Follow-up Date") {
+        // Render a date input for "Follow-up Date"
+        return `
+        <div class="col-span-1">
+          <label class="block text-gray-700 font-bold uppercase">${field}</label>
+          <input type="date" class="filter-select w-full px-3 py-2 border border-gray-300 rounded" data-field-name="${field}" />
+        </div>
+      `;
+      } else {
+        // Render a dropdown for other fields
+        const uniqueValues = [
+          ...new Set(data.map((item) => item.rowData[field] || "")),
+        ].filter(Boolean);
+        return `
+        <div class="col-span-1">
+          <label class="block text-gray-700 font-bold uppercase">${field}</label>
+          <select class="filter-select w-full px-3 py-2 border border-gray-300 rounded" data-field-name="${field}">
+            <option value="">All</option>
+            ${uniqueValues
+              .map((value) => `<option value="${value}">${value}</option>`)
+              .join("")}
+          </select>
+        </div>
+      `;
+      }
+    })
+    .join("");
+
+  // Append a filter button to apply the filters
+  filterHtml += `
+  <div class="col-span-1 flex items-end">
+    <button id="apply-filter" class="bg-green-500 text-white p-2 rounded">Apply Filter</button>
+  </div>
+`;
+
+  filterContainer.innerHTML = `<div class="grid grid-cols-5 gap-2 w-full">${filterHtml}</div>`;
+
+  document.getElementById("apply-filter").addEventListener("click", () => {
+    const filters = {};
+
+    // Gather the selected filters
+    document.querySelectorAll(".filter-select").forEach((select) => {
+      const field = select.getAttribute("data-field-name");
+      const value = select.value;
+      if (value && value !== "All") {
+        filters[field] = value;
+      }
+    });
+
+    const accordionContainer = document.getElementById("accordion-container");
+    const accordions = accordionContainer.querySelectorAll(".accordion-header");
+
+    accordions.forEach((header) => {
+      let matchesFilter = true;
+      const content = header.nextElementSibling; // Get the associated content
+
+      // Loop through each filter and check if it matches any corresponding field in the header or content
+      for (const field in filters) {
+        const filterValue = filters[field];
+
+        // Check if the field exists in the header
+        const headerField = header.querySelector(
+          `[data-field-name="${field}"]`
+        );
+        let headerValue = headerField
+          ? headerField.tagName === "SPAN"
+            ? headerField.innerText
+            : headerField.value
+          : "";
+
+        // Check if the field exists in the content
+        const contentField = content.querySelector(
+          `[data-field-name="${field}"]`
+        );
+        let contentValue = contentField
+          ? contentField.tagName === "SPAN"
+            ? contentField.innerText
+            : contentField.value
+          : "";
+
+        // If neither header nor content match the filter, set matchesFilter to false
+        if (headerValue !== filterValue && contentValue !== filterValue) {
+          matchesFilter = false;
+          break;
+        }
+      }
+
+      // Show header if it matches the filter criteria, otherwise hide it
+      if (matchesFilter) {
+        header.classList.remove("hidden");
+      } else {
+        header.classList.add("hidden");
+      }
+    });
+  });
+
+  // Render the accordion with the data
   data.forEach(({ rowData, originalIndex }, index) => {
     // Create accordion header (non-editable and editable fields)
     const header = document.createElement("div");
@@ -255,8 +361,6 @@ function createAccordion(data, dropdownOptions) {
       });
     });
   });
-
-  const filterContainer = document.getElementById("filter-container");
 }
 // Function to generate the form in the accordion content
 function generateForm(row, dropdownOptions, headerFields, originalIndex) {
@@ -292,6 +396,16 @@ function generateForm(row, dropdownOptions, headerFields, originalIndex) {
               )
               .join("")}
           </select>
+        </div>
+      `;
+    } else if (NonEditable.includes(field)) {
+      // Non-editable fields displayed as labels
+      formHtml += `
+        <div class="col-span-1">
+          <label class="block text-gray-700 font-bold uppercase">${field}</label>
+          <span class="block w-full py-2 font-semibold text-black" data-field-name="${field}">${
+        row[field] || ""
+      }</span>
         </div>
       `;
     } else {
