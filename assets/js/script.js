@@ -59,7 +59,28 @@ document
     try {
       const allData = getAllDataFromAccordion(); // Collect all data from the accordion
       await window.api.saveData(allData); // Save all data using the API
-      alert("All rows saved successfully.");
+      // Remove the red highlight and reset the accordion header color
+      const accordionContainer = document.getElementById("accordion-container");
+      accordionContainer
+        .querySelectorAll(".accordion-header")
+        .forEach((header) => {
+          const editableFields = header.querySelectorAll(".editable-field");
+          const contentFields =
+            header.nextElementSibling.querySelectorAll(".editable-field");
+
+          // Remove red border from editable fields in the header
+          editableFields.forEach((field) => {
+            field.classList.remove("border-red-500");
+          });
+
+          // Remove red border from editable fields in the content
+          contentFields.forEach((field) => {
+            field.classList.remove("border-red-500");
+          });
+
+          // Reset header background color
+          header.classList.remove("bg-red-100"); // Remove light red background color
+        });
     } catch (error) {
       console.error("Error saving data:", error);
       alert(`Failed to save data: ${error.message}`);
@@ -67,15 +88,58 @@ document
       hideSpinner();
     }
   });
+
 // Event listener for logout button
 document.getElementById("logout-btn").addEventListener("click", () => {
   showSpinner();
   document.getElementById("main-page").style.display = "none";
   document.getElementById("login-page").classList.remove("hidden");
+  hideSpinner();
   loggedInUser = ""; // Clear the logged-in username on logout
   // Clear the table data
   document.getElementById("table-container").innerHTML = "";
-  hideSpinner();
+});
+
+document.getElementById("search-box").addEventListener("input", function () {
+  const searchTerm = this.value;
+  const accordions = document.querySelectorAll(".accordion-header");
+
+  accordions.forEach((header) => {
+    const content = header.nextElementSibling;
+    let headerMatch = false;
+    let contentMatch = false;
+
+    // Search in header fields (span, input, select)
+    const headerFields = header.querySelectorAll("span, input, select");
+    headerFields.forEach((field) => {
+      if (
+        field.textContent.includes(searchTerm) ||
+        (field.value && field.value.includes(searchTerm))
+      ) {
+        headerMatch = true;
+      }
+    });
+
+    // Search in content fields (span, input, select)
+    const contentFields = content.querySelectorAll("span, input, select");
+    contentFields.forEach((field) => {
+      if (
+        field.textContent.includes(searchTerm) ||
+        (field.value && field.value.includes(searchTerm))
+      ) {
+        contentMatch = true;
+      }
+    });
+
+    // Show header and content if either matches
+    if (headerMatch || contentMatch) {
+      header.style.display = "";
+      content.style.display = "";
+    } else {
+      header.style.display = "none";
+      content.style.display = "none";
+    }
+  });
 });
 
 function createAccordion(data, dropdownOptions) {
@@ -105,7 +169,7 @@ function createAccordion(data, dropdownOptions) {
         // Non-editable fields displayed as labels
         headerHtml += `
           <div class="col-span-1">
-            <label class="block text-gray-700 font-bold">${field}</label>
+            <label class="block text-gray-700 font-bold uppercase">${field}</label>
             <span class="block w-full py-2 font-semibold text-black" data-field-name="${field}">${
           rowData[field] || ""
         }</span>
@@ -144,7 +208,7 @@ function createAccordion(data, dropdownOptions) {
     header.innerHTML = `
       <div class="grid grid-cols-5 gap-2 w-full">${headerHtml}</div>
       <div class="flex items-center px-1">
-        <button class="accordion-toggle">More Details</button>
+        <button class="accordion-toggle bg-green-400 py-1 px-2 rounded text-center font-bold uppercase">More details</button>
       </div>
     `;
 
@@ -168,22 +232,31 @@ function createAccordion(data, dropdownOptions) {
     accordionContainer.appendChild(header);
     accordionContainer.appendChild(content);
 
-    // Add event listener to highlight edited fields in header
+    // Function to highlight the accordion header if any field is edited
+    function highlightHeader() {
+      header.classList.add("bg-red-100");
+    }
+
+    // Add event listener to editable fields in the header
     const editableFields = header.querySelectorAll(".editable-field");
     editableFields.forEach((field) => {
       field.addEventListener("input", () => {
         field.classList.add("border-red-500");
+        highlightHeader(); // Highlight the header when any field is edited
       });
     });
 
-    // Add event listener to highlight edited fields in content
+    // Add event listener to editable fields in the content
     const contentEditableFields = content.querySelectorAll(".editable-field");
     contentEditableFields.forEach((field) => {
       field.addEventListener("input", () => {
         field.classList.add("border-red-500");
+        highlightHeader(); // Highlight the header when any field in content is edited
       });
     });
   });
+
+  const filterContainer = document.getElementById("filter-container");
 }
 // Function to generate the form in the accordion content
 function generateForm(row, dropdownOptions, headerFields, originalIndex) {
