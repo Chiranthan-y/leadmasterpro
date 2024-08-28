@@ -1,6 +1,11 @@
 let loggedInUser = "";
 
-let filterFields = ["Call Remarks", "Follow-up Date"];
+let filterFields = [
+  "Call Remarks",
+  "Follow-up Date",
+  "Vendor / partner",
+  "Country code",
+];
 let NonEditable = [
   "Ref No",
   "Counsellor",
@@ -18,7 +23,8 @@ const headerFields = [
   "Call Remarks",
   "Follow-up Date",
   "Vendor / partner",
-  "Remarks",
+  "Education Details",
+  "Remark",
 ];
 
 // Event listener for login button
@@ -46,6 +52,7 @@ document.getElementById("load-data-btn").addEventListener("click", async () => {
   try {
     const data = await window.api.loadData(loggedInUser); // Pass the logged-in username
     const dropdownOptions = await window.api.loadDropdownOptions();
+    console.log({ data, dropdownOptions });
     createAccordion(data, dropdownOptions);
   } catch (error) {
     console.error(`Error loading data:, ${error}`);
@@ -449,10 +456,15 @@ function getAllDataFromAccordion() {
     const content = header.nextElementSibling; // The accordion content is the next sibling
 
     // Collect data from content fields
-    content.querySelectorAll("input, select").forEach((element) => {
+    content.querySelectorAll("input, select, span").forEach((element) => {
       const fieldName = element.dataset.fieldName;
       if (fieldName) {
-        rowData[fieldName] = element.value;
+        // For spans, use innerText instead of value
+        if (element.tagName === "SPAN") {
+          rowData[fieldName] = element.innerText;
+        } else {
+          rowData[fieldName] = element.value || element.innerText;
+        }
       }
     });
 
